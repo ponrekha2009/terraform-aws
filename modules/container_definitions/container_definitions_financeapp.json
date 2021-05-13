@@ -1,0 +1,111 @@
+[
+	{
+		"name": "financeapp_container",
+		"image": "${docker_image_app}",
+		"essential": true,
+		"mountPoints" : [
+            {
+				"containerPath" : "/logger",
+				"sourceVolume" : "application_logs",
+				"readOnly": false
+            }
+		],
+		"entryPoint": null,
+		"portMappings": [{
+			"containerPort": 8080,
+			"hostPort": 8080,
+			"protocol": "tcp"
+		}],
+		"logConfiguration": {
+			"logDriver": "awsfirelens",
+			"secretOptions": null,
+			"options": {
+				"Name": "cloudwatch",
+				"region": "us-east-1",
+				"log_group_name": "/aws/ecs/fargate/application",
+				"auto_create_group": "true",
+				"log_stream_name": "financeapp_service"
+			}
+		},
+		"memoryReservation": 256,
+		"environment": [
+			{
+				"name": "LOG_DIR",
+				"value": "/logger/logs"
+			},
+			{
+				"name": "LOG_FILE_NAME",
+				"value": "financeapp.log"
+			},
+			{
+				"name": "TASK_ROLE_ARN",
+				"value": "${task_role_arn}"
+			},
+			{
+				"name": "AWS_REGION",
+				"value": "${aws_region}"
+			}
+		]
+	},
+	{
+		"name": "log_router",
+		"description": "using custom fluent bit image - input and out are configured in custom fluent bit config Dockerfile",
+		"image": "${docker_image_logger}",
+		"essential": true,
+		"dependsOn": [
+			{
+				"containerName": "financeapp_container",
+				"condition": "START"
+			}
+		],
+		"volumesFrom": [
+			{
+			  "sourceContainer": "financeapp_container"
+			}
+      	],
+		"portMappings": [{
+			"containerPort": 9090,
+			"hostPort": 9090,
+			"protocol": "tcp"
+		}],
+		"firelensConfiguration": {
+			"type": "fluentbit",
+			"options": {
+				"config-file-type": "file",
+				"config-file-value": "/logger/config/fluent-bit.conf",
+				"enable-ecs-log-metadata": "false"
+			}
+		},
+		"logConfiguration": {
+			"logDriver": "awslogs",
+			"secretOptions": null,
+			"options": {
+				"awslogs-group": "/aws/ecs/fargate/logger",
+				"awslogs-region": "us-east-1",
+				"awslogs-create-group": "true",
+				"awslogs-stream-prefix": "log_router"
+			}
+		},
+		"memoryReservation": 128,
+		"environment": [
+			{
+				"name": "LOG_DIR",
+				"value": "/logger/logs"
+			},
+			{
+				"name": "LOG_FILE_NAME",
+				"value": "financeapp.log"
+			},
+			{
+				"name": "TASK_ROLE_ARN",
+				"value": "${task_role_arn}"
+			},
+			{
+				"name": "AWS_REGION",
+				"value": "${aws_region}"
+			}
+
+		]
+	}
+
+]

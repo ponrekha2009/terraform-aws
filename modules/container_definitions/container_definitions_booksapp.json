@@ -1,0 +1,33 @@
+[{
+	"name": "booksapp_container",
+	"description": "using cloudwatch agent installed on the app container - details in booksapp Dockerfile",
+	"image": "${docker_image_app}",
+	"essential": true,
+	"entryPoint": null,
+	"portMappings": [{
+			"containerPort": 8080,
+			"hostPort": 8080,
+			"protocol": "tcp"
+		},
+		{
+			"containerPort": 22,
+			"hostPort": 22,
+			"protocol": "tcp"
+		}
+	],
+	"logConfiguration": {
+		"logDriver": "awslogs",
+		"secretOptions": null,
+		"options": {
+			"awslogs-group": "/aws/ecs/fargate/pals-ecs-cluster/container-logs",
+			"awslogs-region": "us-east-1",
+			"awslogs-create-group": "true",
+			"awslogs-stream-prefix": "booksapp-service"
+		}
+	},
+	"memoryReservation": 256,
+	"environment": [{
+		"name": "env_variable",
+		"value": "env_value"
+	}]
+}]
